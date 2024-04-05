@@ -55,10 +55,12 @@ impl Browser {
 	#[logger]
 	fn get_ready(&mut self, headless: bool) {
 		log!("Downloading chromedriver");
+
 		#[cfg(unix)]
 		let out: String = String::from_utf8(std::process::Command::new("/tmp/selenium-manager").arg("--browser").arg("chrome").arg("--output").arg("json").output().unwrap().stdout).unwrap();
 		#[cfg(not(unix))]
-		let out: String = String::from_utf8(std::process::Command::new("./selenium-manager").arg("--browser").arg("chrome").arg("--output").arg("json").output().unwrap().stdout).unwrap();
+		let out: String = String::from_utf8(std::process::Command::new("./selenium-manager.exe").arg("--browser").arg("chrome").arg("--output").arg("json").output().unwrap().stdout).unwrap();
+
 		let json: serde_json::Value = serde_json::from_str(out.as_str()).unwrap();
 
 		let chromedriver = json["result"]["driver_path"].as_str().unwrap();
@@ -113,7 +115,7 @@ impl Browser {
 
 	#[logger]
 	async fn screenshot(&self) -> Vec<u8> {
-		return self.client.as_ref().unwrap().screenshot_as_png().await.unwrap();
+		log_return!{ self.client.as_ref().unwrap().screenshot_as_png().await.unwrap() };
 	}
 
 }
@@ -286,7 +288,7 @@ fn main() {
 		log!("chmod +x /tmp/selenium-manager: {}", std::process::Command::new("/usr/bin/chmod").arg("+x").arg("/tmp/selenium-manager").status().unwrap());
 	} else {
 		_ublock = include_file!("ublock.crx", "../ublock.crx");
-		_manager = include_file!("selenium-manager", "../selenium-manager");
+		_manager = include_file!("selenium-manager.exe", "../selenium-manager.exe");
 	}
 
 	loop {
