@@ -89,7 +89,10 @@ impl Browser {
 		}
 
 		aw!(self.rt, {
-			self.client = Some(Box::new(WebDriver::new("http://localhost:4444", caps).await.unwrap()));
+			match WebDriver::new("http://localhost:4444", caps).await {
+				Ok(c) => self.client = Some(Box::new(c)),
+				Err(e) => err!("Could not start browser: {}", e),
+			}
 		});
 	}
 
