@@ -66,7 +66,7 @@ impl Browser {
 		let chromedriver = json["result"]["driver_path"].as_str().unwrap();
 		let chrome = json["result"]["browser_path"].as_str().unwrap();
 
-		log!("Init browser");
+		log!("Starting {}", chromedriver);
 		let driver_cmd = std::process::Command::new(chromedriver).arg("--port=4444")
 			.stdout(std::process::Stdio::null())
 			.stderr(std::process::Stdio::null())
