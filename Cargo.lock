@@ -1604,4 +1604,5 @@ dependencies = [
  "serde_json",
  "thirtyfour",
  "tokio",
+ "windows-sys 0.52.0",
 ]

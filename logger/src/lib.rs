@@ -35,6 +35,22 @@ use syn::{parse_macro_input, ItemFn};
 //     };
 // }
 
+#[cfg(windows)]
+pub fn set_virtual_terminal() {
+	use windows_sys::Win32::System::Console::{
+		GetConsoleMode, GetStdHandle, SetConsoleMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING,
+		STD_OUTPUT_HANDLE,
+	};
+
+	unsafe {
+		let handle = GetStdHandle(STD_OUTPUT_HANDLE);
+		let mut original_mode = 0;
+		GetConsoleMode(handle, &mut original_mode);
+		SetConsoleMode(handle, ENABLE_VIRTUAL_TERMINAL_PROCESSING | original_mode)
+	}
+
+}
+
 #[proc_macro_attribute]
 pub fn logger(_attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let input = parse_macro_input!(item as ItemFn);
@@ -47,6 +63,10 @@ pub fn logger(_attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> 
 	let out = quote::quote!(
 		#[allow(unreachable_code)]
 		#(#attrs)* #vis #sig {
+
+			#[cfg(windows)]
+			set_virtual_terminal();
+
 			let start = std::time::Instant::now();
 			let mut dt = chrono::Local::now();
 			println!("\x1b[32m[{}] \x1b[96m{}\x1b[0m", dt.format("%H:%M:%S"), #name);
