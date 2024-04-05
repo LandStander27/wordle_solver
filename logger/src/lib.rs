@@ -61,7 +61,7 @@ pub fn logger(_attr: proc_macro::TokenStream, item: proc_macro::TokenStream) -> 
 					GetConsoleMode(handle, &mut original_mode);
 					SetConsoleMode(handle, ENABLE_VIRTUAL_TERMINAL_PROCESSING | original_mode)
 				}
-			}
+			};
 
 			let start = std::time::Instant::now();
 			let mut dt = chrono::Local::now();
