@@ -61,17 +61,23 @@ impl Browser {
 		#[cfg(not(unix))]
 		let out: String = String::from_utf8(std::process::Command::new("./selenium-manager.exe").arg("--browser").arg("chrome").arg("--output").arg("json").output().unwrap().stdout).unwrap();
 
-		let json: serde_json::Value = serde_json::from_str(out.as_str()).unwrap();
+		let json: serde_json::Value = match serde_json::from_str(out.as_str()) {
+			Ok(o) => o,
+			Err(e) => log_return!{ Err(format!("Could not parse selenium-manager output as json: {}", e)) },
+		};
 
 		let chromedriver = json["result"]["driver_path"].as_str().unwrap();
 		let chrome = json["result"]["browser_path"].as_str().unwrap();
 
 		log!("Starting {}", chromedriver);
-		let driver_cmd = std::process::Command::new(chromedriver).arg("--port=4444")
+		let driver_cmd = match std::process::Command::new(chromedriver).arg("--port=4444")
 			.stdout(std::process::Stdio::null())
 			.stderr(std::process::Stdio::null())
 			.stdin(std::process::Stdio::null())
-			.spawn().unwrap();
+			.spawn() {
+				Ok(o) => o,
+				Err(e) => log_return!{ Err(format!("Could not start chromedriver: {}", e)) },
+			};
 
 		self.driver_proc = Some(driver_cmd);
 
@@ -79,12 +85,18 @@ impl Browser {
 		caps.set_binary(chrome).unwrap();
 
 		#[cfg(unix)]
-		caps.add_extension(Path::new("/tmp/ublock.crx")).unwrap();
+		if let Err(e) = caps.add_extension(Path::new("/tmp/ublock.crx")) {
+			log_return!{ Err(format!("Could not add extension: {}", e)) };
+		}
 		#[cfg(not(unix))]
-		caps.add_extension(Path::new("./ublock.crx")).unwrap();
+		if let Err(e) = caps.add_extension(Path::new("./ublock.crx")) {
+			log_return!{ Err(format!("Could not add extension: {}", e)) };
+		}
 
 		if headless {
-			caps.set_headless().unwrap();
+			if let Err(e) = caps.set_headless() {
+				log_return!{ Err(format!("Could not set headless: {}", e)) };
+			}
 			caps.add_chrome_arg("--window-size=1920,1080").unwrap();
 		}
 
@@ -146,7 +158,10 @@ fn solve(words: &mut Vec<&String>, headless: bool, ss: Option<String>) -> Option
 
 	log!("Init browser");
 	let mut browser = Browser::new();
-	browser.get_ready(headless);
+	if let Err(e) = browser.get_ready(headless) {
+		err!("{}", e);
+		std::process::exit(1);
+	}
 
 	return aw!(browser.rt, {
 		browser.go_to("https://www.nytimes.com/games/wordle/index.html").await;
