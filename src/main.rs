@@ -53,7 +53,7 @@ impl Browser {
 	}
 
 	#[logger]
-	fn get_ready(&mut self, headless: bool) {
+	fn get_ready(&mut self, headless: bool) -> Result<(), String> {
 		log!("Downloading chromedriver");
 
 		#[cfg(unix)]
@@ -88,12 +88,15 @@ impl Browser {
 			caps.add_chrome_arg("--window-size=1920,1080").unwrap();
 		}
 
-		aw!(self.rt, {
+		log_return!{ aw!(self.rt, {
 			match WebDriver::new("http://localhost:4444", caps).await {
-				Ok(c) => self.client = Some(Box::new(c)),
-				Err(e) => err!("Could not start browser: {}", e),
+				Ok(c) => {
+					self.client = Some(Box::new(c));
+					return Ok(());
+				},
+				Err(e) => return Err(format!("Could not start browser: {}", e)),
 			}
-		});
+		})};
 	}
 
 	async fn find(&self, selector: &str) -> WebElement {
