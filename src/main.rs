@@ -125,7 +125,6 @@ impl Drop for Browser {
 
 		aw!(self.rt, {
 			let client = self.client.take().unwrap();
-			client.close_window().await.unwrap();
 			client.quit().await.unwrap();
 		});
 
